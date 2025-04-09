@@ -16,6 +16,9 @@ end
 
 target 'AwesomeProject' do
   config = use_native_modules!
+  
+  # Add the LivePerson iOS Messaging SDK dependency.
+   pod 'LPMessagingSDK', '~> 6.23.1'
 
   use_react_native!(
     :path => config[:reactNativePath],
