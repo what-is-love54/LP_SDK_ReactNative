@@ -26,7 +26,9 @@ const App = () => {
 
 	return (
 		<View style={styles.container}>
-			<Text>React Native & LivePerson SDK (Swift) Integrated!</Text>
+			<Text style={styles.text}>
+				React Native & LivePerson SDK (Swift and Kotlin) Integrating!
+			</Text>
 		</View>
 	);
 };
@@ -36,6 +38,11 @@ const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
+	},
+	text: {
+		fontSize: 20,
+		color: '#000',
+		textAlign: 'center',
 	},
 });
 

@@ -11,7 +11,6 @@ import com.liveperson.infra.auth.LPAuthenticationParams
 import com.liveperson.infra.auth.LPAuthenticationType
 import com.liveperson.infra.callbacks.InitLivePersonCallBack
 import com.liveperson.messaging.sdk.api.LivePerson
-import java.lang.reflect.Method
 
 class LivePersonModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -28,7 +27,15 @@ class LivePersonModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun initSDK(brandId: String, authCode: String, promise: Promise) {
+    fun initSDK(brandId: String?, authCode: String?, promise: Promise) {
+        globalBrandId = brandId
+        globalAuthCode = authCode
+
+        if (brandId == null || authCode == null) {
+            promise.reject("NO_CREDENTIALS", "Credentials are not set. Call setCredentials first.")
+            return
+        }
+
         val initProps = InitLivePersonProperties(
             brandId,
             APP_ID,
@@ -36,25 +43,13 @@ class LivePersonModule(private val reactContext: ReactApplicationContext) :
         )
 
         try {
-            val method: Method = LivePerson::class.java.getDeclaredMethod(
-                "initialize",
-                ReactApplicationContext::class.java,
-                InitLivePersonCallBack::class.java,
-                InitLivePersonProperties::class.java
-            )
-            method.isAccessible = true
-            method.invoke(
-                null,
+            LivePersonInitHelper.initializeSDK(
                 reactContext,
                 object : InitLivePersonCallBack {
                     override fun onInitSucceed() {
-                        val authParams = LPAuthenticationParams(LPAuthenticationType.AUTH).apply {
-                            authKey = authCode
-                        }
                         val activity: Activity? = currentActivity
                         if (activity != null) {
-                            LivePerson.showConversation(activity, authParams, ConversationViewParams())
-                            promise.resolve("Conversation shown successfully")
+                            promise.resolve("SDK initialized successfully")
                         } else {
                             promise.reject("NO_ACTIVITY", "Activity is null")
                         }
@@ -68,19 +63,25 @@ class LivePersonModule(private val reactContext: ReactApplicationContext) :
             )
         } catch (e: Exception) {
             e.printStackTrace()
-            promise.reject("REFLECTION_ERROR", "Reflection error: ${e.message}")
+            promise.reject("INIT_ERROR", "LivePerson SDK init error: ${e.message}")
         }
     }
 
     @ReactMethod
-    fun showConversation(accountNumber: String, promise: Promise) {
+    fun showConversation(promise: Promise) {
         val activity: Activity = currentActivity ?: run {
             promise.reject("NO_ACTIVITY", "Activity is null, can't show conversation.")
             return
         }
 
         try {
-            val authParams = LPAuthenticationParams(LPAuthenticationType.UN_AUTH) // Anonymous user
+            val authParams: LPAuthenticationParams = if (globalBrandId != null && globalAuthCode != null) {
+                LPAuthenticationParams(LPAuthenticationType.AUTH).apply {
+                    this.authKey = globalAuthCode
+                }
+            } else {
+                LPAuthenticationParams(LPAuthenticationType.UN_AUTH) // Anonymous user
+            }
             val conversationViewParams = ConversationViewParams(false)
             LivePerson.showConversation(activity, authParams, conversationViewParams)
             promise.resolve("Conversation shown successfully")
