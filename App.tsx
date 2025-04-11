@@ -2,7 +2,7 @@
 
 import React, {useCallback, useEffect} from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-// ---------------------------------------------------------------
+// ---------------------------------------------------------------1
 import {LivePersonModule} from './source';
 
 const accID = '14800077';
